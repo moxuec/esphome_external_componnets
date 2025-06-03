@@ -27,6 +27,16 @@ sensor:
       name: "甲醛ppb"
     update_interval: 5s
 
+  - platform: kanfurco2
+    id: co2sensor
+    uart_id: uart_bus2
+    co2:
+      name: "co2"
+    self_calibrate: true
+    period: 5
+    base: 400
+    update_interval: 5s
+
   - platform: newltr390
     i2c_id: i2cbus
     uv_index:

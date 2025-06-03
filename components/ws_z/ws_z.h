@@ -23,7 +23,6 @@ class DARTWSZComponent : public PollingComponent, public uart::UARTDevice {
 
  
  protected:
-  uint8_t uart_buffer_[SB1_BUFFER_LEN]{0};
   bool dart_write_command_(const uint8_t *command, uint8_t *response);
   sensor::Sensor *formaldehyde_sensor_{nullptr};
   sensor::Sensor *formaldehyde_ppb_sensor_{nullptr};

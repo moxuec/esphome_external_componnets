@@ -28,7 +28,7 @@ CONFIG_SCHEMA = cv.All(
                 accuracy_decimals=0,
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
-            cv.Optional("formaldehyde_ppb"): sensor.sensor_schema(
+            cv.Optional(CONF_FORMALDEHYDE_PPB): sensor.sensor_schema(
                 unit_of_measurement=UNIT_PARTS_PER_BILLION,
                 icon=ICON_CHEMICAL_WEAPON,
                 accuracy_decimals=0,
@@ -52,5 +52,5 @@ async def to_code(config):
     if CONF_FORMALDEHYDE_PPB in config:
         sens = await sensor.new_sensor(config[CONF_FORMALDEHYDE_PPB])
         cg.add(var.set_formaldehyde_ppb_sensor(sens))
-    if CONF_UPDATE_INTERVAL in config:
-        cg.add(var.set_update_interval(config[CONF_UPDATE_INTERVAL]))
+    # if CONF_UPDATE_INTERVAL in config:
+    #     cg.add(var.set_update_interval(config[CONF_UPDATE_INTERVAL]))

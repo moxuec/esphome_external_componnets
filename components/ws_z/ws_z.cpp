@@ -4,7 +4,7 @@
 namespace esphome {
 namespace ws_z {
 
-static const char *const TAG = "dart";
+static const char *const TAG = "dart_ws_z";
 static const uint8_t DART_REQUEST_LENGTH = 8;
 static const uint8_t DART_RESPONSE_LENGTH = 9;
 //static const uint8_t DART_COMMAND_GET_PPM[] = {0xFF,0x01,0x86,0x00,0x00,0x00,0x00,0x00,0x79};//问答模式下，请求发送
