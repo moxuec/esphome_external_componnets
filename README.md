@@ -17,7 +17,25 @@ i2c:
   scl: 19
   scan: true
   id: i2cbus
+number:
+- platform: template
+  id: basenum
+  name: "设置基准数值"
+  optimistic: true
+  restore_value: true
+  min_value: 0
+  max_value: 100000
+  step: 1
+  entity_category: "diagnostic"
 
+button:
+  - platform: template
+    name: "校准CO2传感器"
+    entity_category: "diagnostic"
+    on_press:
+      - kanfurco2.calibrate:
+          id: co2sensor
+          base: !lambda "return id(basenum).state;"
 sensor:
   - platform: ws_z
     uart_id: uart_bus
