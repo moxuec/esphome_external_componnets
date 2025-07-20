@@ -82,7 +82,7 @@ CONFIG_SCHEMA = (
 
 # 设备验证，指定UART的通信参数
 FINAL_VALIDATE_SCHEMA = uart.final_validate_device_schema(
-    "bl0910", baud_rate=19200, require_tx=True, require_rx=True
+    "bl0910", require_tx=True, require_rx=True, stop_bits=1
 )
 
 # 注册“重置电量”动作
