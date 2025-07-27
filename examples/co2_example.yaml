@@ -1,0 +1,167 @@
+substitutions:
+  name: "kanfur"
+  location: "bedroom"
+
+esphome:
+  name: "${name}"
+  name_add_mac_suffix: true
+  friendly_name: "${location}kanfur"
+  comment: kanfur co2
+  project:
+    name: synodriver.kanfur
+    version: "0.0.1"
+  on_boot:
+    then:
+      kanfurco2.toggle_self_calibrate:
+        id: co2sensor
+        open: true
+        period: 3
+        base: 400
+
+preferences:
+  flash_write_interval: 10min
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: ! wifi_ssid
+  password: ! wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "kanfur Fallback"
+    password: ""
+
+captive_portal:
+
+web_server:
+  port: 80
+
+# deep_sleep:
+#   id: deep_sleep_control
+#   sleep_duration: 300s
+
+# script:
+#   - id: consider_deep_sleep
+#     mode: parallel
+#     then:
+#       - delay: 20s
+#       - if:
+#           condition:
+#             - binary_sensor.is_on: prevenent_deepsleep
+#           then:
+#             - logger.log: "skip sleep"
+#             - deep_sleep.prevent: deep_sleep_control
+#           else:
+#             - deep_sleep.allow: deep_sleep_control
+#             - deep_sleep.enter: deep_sleep_control
+#       - script.execute: consider_deep_sleep
+
+switch:
+  - platform: restart
+    name: "${name} controller Restart"
+  - platform: factory_reset
+    name: Restart with Factory Default Settings
+    disabled_by_default: true
+
+# binary_sensor:
+#   - platform: homeassistant
+#     id: prevenent_deepsleep
+#     name: Preent Deepsleep
+#     entity_id: input_boolean.fang_zhi_xiu_mian
+#     entity_category: "diagnostic"
+#     disabled_by_default: True
+external_components:
+  - source:
+      type: local
+      path: components
+
+uart:
+  id: uart_bus
+  tx_pin: 17
+  rx_pin: 16
+  baud_rate: 9600
+  stop_bits: 1
+  rx_buffer_size: 512
+
+i2c:
+  sda: 18
+  scl: 19
+  scan: true
+  id: i2cbus
+
+
+sensor:
+  - platform: kanfurco2
+    id: co2sensor
+    uart_id: uart_bus
+    co2:
+      name: "co2"
+    self_calibrate: true
+    period: 5
+    base: 400
+    update_interval: 5s
+
+  - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
+    name: "${name} WiFi Signal dB"
+    id: wifi_signal_db
+    update_interval: 60s
+    entity_category: "diagnostic"
+
+  - platform: copy # Reports the WiFi signal strength in %
+    source_id: wifi_signal_db
+    name: "${name} WiFi Signal Percent"
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "%"
+    entity_category: "diagnostic"
+
+number:
+  - platform: template
+    id: basenum
+    name: "co2 base"
+    icon: "mdi:co2"
+    optimistic: true
+    restore_value: true
+    min_value: 0
+    max_value: 100000
+    step: 1
+    entity_category: "diagnostic"
+
+button:
+  - platform: template
+    name: "calibrate co2"
+    entity_category: "diagnostic"
+    on_press:
+      - kanfurco2.calibrate:
+          id: co2sensor
+          base: !lambda "return id(basenum).state;"
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: ${name} IP Address
+    ssid:
+      name: ${name} Connected SSID
+    bssid:
+      name: ${name} Connected BSSID
+    mac_address:
+      name: ${name} Mac Wifi Address
+    # scan_results:
+    #   name: ${name} Latest Scan Results
+    dns_address:
+      name: ${name} DNS Address
+  - platform: version
+    name: "ESPHome Version"
