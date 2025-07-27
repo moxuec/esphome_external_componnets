@@ -22,7 +22,8 @@ uint8_t dart_checksum(const uint8_t *command) {
   for (uint8_t i = 1; i < DART_REQUEST_LENGTH; i++) {
     sum += command[i];
   }
-  return 0xFF - sum + 0x01;
+  sum = (~sum) + 1;
+  return sum;
 }
 
 void DARTWSZComponent::setup() {
