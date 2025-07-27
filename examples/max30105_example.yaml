@@ -1,0 +1,206 @@
+substitutions:
+  name: "smoke-sensor-pro"
+  location: "kitchen"
+
+esphome:
+  name: "${name}"
+  name_add_mac_suffix: true
+  friendly_name: "${location} smoke sensor pro"
+  comment: smoke-sensor-pro
+  project:
+    name: synodriver.csmoke-sensor-pro
+    version: "0.0.1"
+preferences:
+  flash_write_interval: 10min
+esp8266:
+  board: nodemcuv2
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  actions:
+    - action: set_led_current
+      variables:
+        red_current: int
+        ir_current: int
+        green_current: int
+        pilot_current: int
+      then:
+        - max30105.set_led_current:
+            id: max30105_1
+            red_current: !lambda 'return red_current;'
+            ir_current: !lambda 'return ir_current;'
+            green_current: !lambda 'return green_current;'
+            pilot_current: !lambda 'return pilot_current;'
+    - action: enable_interrupts
+      variables:
+        fifo_almost_full: bool
+        data_ready: bool
+        alc_overflow: bool
+        prox_int: bool
+        temp_ready: bool
+      then:
+        - max30105.enable_interrupts:
+            id: max30105_1
+            fifo_almost_full: !lambda "return fifo_almost_full;"
+            data_ready: !lambda "return data_ready;"
+            alc_overflow: !lambda "return alc_overflow;"
+            prox_int: !lambda "return prox_int;"
+            temp_ready: !lambda "return temp_ready;"
+  on_client_connected:
+    - logger.log:
+        format: "Client %s connected to API with IP %s"
+        args: ["client_info.c_str()", "client_address.c_str()"]
+    # - if:
+    #     condition:
+    #       binary_sensor.is_on: relay_status
+    #     then:
+    #       - logger.log: "Power is ON!"
+    #       - light.turn_on: stat_led
+    #       - delay: 2s
+    #     else:
+    #       - logger.log: "Power is OFF!"
+    #       - light.turn_off: stat_led
+ota:
+  - platform: esphome
+wifi:
+  ssid: ! wifi_ssid
+  password: ! wifi_password
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    password: ""
+  #use_address: 192.168.5.240
+captive_portal:
+
+web_server:
+  port: 80
+
+external_components:
+  - source:
+      type: local
+      path: components
+
+i2c:
+  sda: D2
+  scl: D1
+  scan: true
+  id: i2cbus
+
+max30105:
+  id: "max30105_1"
+  i2c_id: i2cbus
+  fifo_almost_full: true
+  alc_overflow: true
+  prox_int: false
+  temp_ready: true
+  data_ready: true
+  red_current: 0x24
+  ir_current: 0x24
+  green_current: 0x24
+  update_interval: 5s
+
+  interrupt_pin: D7 # make sure this pin has a pull-up resistor
+
+binary_sensor:
+  - platform: max30105
+    max30105_id: "max30105_1"
+    alc_overflow:
+      name: "alc overflow"
+      entity_category: "diagnostic"
+    power_ready:
+      name: "power ready"
+      entity_category: "diagnostic"
+    fifo_full:
+      name: "fifo full"
+      entity_category: "diagnostic"
+
+
+sensor:
+  - platform: max30105
+    temperature:
+      name: "die temperature"
+    led1:
+      name: "red led"
+    led2:
+      name: "ir led"
+    led3:
+      name: "green led"
+    max30105_id: "max30105_1"
+
+  - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
+    name: "${name} WiFi Signal dB"
+    id: wifi_signal_db
+    update_interval: 60s
+    entity_category: "diagnostic"
+
+  - platform: copy # Reports the WiFi signal strength in %
+    source_id: wifi_signal_db
+    name: "${name} WiFi Signal Percent"
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "%"
+    entity_category: "diagnostic"
+
+button:
+  - platform: template
+    name: "reset sensor"
+    id: button1
+    entity_category: "diagnostic"
+    on_press:
+      - max30105.reset:
+          id: max30105_1
+
+  - platform: template
+    name: "shutdown sensor"
+    id: button2
+    entity_category: "diagnostic"
+    on_press:
+      - max30105.shutdown:
+          id: max30105_1
+
+  - platform: template
+    name: "wakeup sensor"
+    id: button3
+    entity_category: "diagnostic"
+    on_press:
+      - max30105.wakeup:
+          id: max30105_1
+
+  - platform: template
+    name: "simulate interrupt"
+    id: button8
+    entity_category: "diagnostic"
+    on_press:
+      - max30105.simulate_interrupt:
+          id: max30105_1
+
+
+time:
+  - platform: sntp
+    id: my_time
+
+switch:
+  - platform: restart
+    name: "${name} controller Restart"
+  - platform: factory_reset
+    name: Restart with Factory Default Settings
+    disabled_by_default: true
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: ${name} IP Address
+    ssid:
+      name: ${name} Connected SSID
+    bssid:
+      name: ${name} Connected BSSID
+    mac_address:
+      name: ${name} Mac Wifi Address
+    # scan_results:
+    #   name: ${name} Latest Scan Results
+    dns_address:
+      name: ${name} DNS Address
+  - platform: version
+    name: "ESPHome Version"
