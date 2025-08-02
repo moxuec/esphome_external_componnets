@@ -51,7 +51,7 @@ void AGS3871Component::update() {
       ESP_LOGW(TAG, "AGS3871 sensor not ready");
       return;  // Sensor not ready
     }
-    uint32_t co = (data[1] << 16) | (data[2] << 8) | data[3];  // 解析CO浓度数据
+    uint32_t co = (((uint32_t)data[1]) << 16) | (((uint32_t)data[2]) << 8) | ((uint32_t)data[3]);  // 解析CO浓度数据
     this->co_sensor_->publish_state(co);
   }
   if (this->resistor_sensor_ != nullptr) {
@@ -63,7 +63,8 @@ void AGS3871Component::update() {
       ESP_LOGW(TAG, "AGS3871 CRC error: expected %02X, got %02X", crc, data[4]);
       return;  // CRC error
     }
-    uint32_t resistor = (data[0] << 24) | (data[1] << 16) | (data[2]<<8) | data[3];  // 解析阻值数据 todo is this right？
+    uint32_t resistor = (((uint32_t)data[0]) << 16) | (((uint32_t)data[1]) << 8) | ((uint32_t)data[2]);  // 解析阻值数据 todo is this right？
+    // https://github.com/RobTillaart/Arduino/blob/48a03abc5948770150802e773848eb8266718969/libraries/AGS3871/AGS3871.cpp
     this->resistor_sensor_->publish_state(resistor*10);
   }
 }
@@ -83,7 +84,7 @@ int AGS3871Component::get_version() {
     ESP_LOGW(TAG, "AGS3871 CRC error: expected %02X, got %02X", crc, data[4]);
     return -1;  // CRC error
   }
-  int version = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | (data[3]);
+  int version = ((int)data[0] << 24) | ((int)data[1] << 16) | ((int)data[2] << 8) | ((int)data[3]);
   return version;
 }
 
