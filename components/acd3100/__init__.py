@@ -1,0 +1,1 @@
+# https://www.aosong.com/userfiles/files/media/ACD3100双通道红外二氧化碳传感器说明书-中%20A0-202407.pdf
