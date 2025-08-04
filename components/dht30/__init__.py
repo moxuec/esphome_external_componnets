@@ -1,0 +1,1 @@
+# https://www.aosong.com/userfiles/files/media/DHT30温湿度传感器说明书中文版%20A1-202406.pdf

@@ -34,6 +34,7 @@ void APM10Component::setup() {
 
 void APM10Component::dump_config() {
   ESP_LOGCONFIG(TAG, "APM10:");
+  LOG_I2C_DEVICE(this);
   LOG_SENSOR("  ", "PM1.0", this->pm1_sensor_);
   LOG_SENSOR("  ", "PM2.5", this->pm2_5_sensor_);
   LOG_SENSOR("  ", "PM10.0", this->pm10_sensor_);

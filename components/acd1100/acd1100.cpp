@@ -35,6 +35,7 @@ void ACD1100Component::dump_config() {
   this->version(buffer);
   ESP_LOGCONFIG(TAG, "ACD1100:\n"
                 "  Version: %s\nSN: %s\n", buffer, snbuff);
+  LOG_I2C_DEVICE(this);
   LOG_SENSOR("  ", "CO2 SENSOR", this->co2_sensor_);
   LOG_SENSOR("  ", "TEMPERATURE SENSOR", this->temperature_sensor_);
   LOG_SENSOR("  ", "CO2 BASE", this->base_sensor_);

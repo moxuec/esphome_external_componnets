@@ -33,6 +33,7 @@ void AGS3870Component::setup() { ESP_LOGCONFIG(TAG, "Running setup"); }
 void AGS3870Component::dump_config() {
   ESP_LOGCONFIG(TAG, "AGS3870:\n"
                 "  Version: %d\n", this->get_version());
+  LOG_I2C_DEVICE(this);
   LOG_SENSOR("  ", "CH4 SENSOR", this->ch4_sensor_);
 }
 

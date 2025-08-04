@@ -10,7 +10,8 @@ from esphome.const import (
     DEVICE_CLASS_CARBON_MONOXIDE,
     STATE_CLASS_MEASUREMENT,
     UNIT_PARTS_PER_MILLION,
-    UNIT_OHM,
+    UNIT_OHM, ICON_RESTART,
+    ENTITY_CATEGORY_DIAGNOSTIC,
 )
 
 CODEOWNERS = ["@synodriver"]
@@ -31,8 +32,10 @@ CONFIG_SCHEMA = cv.All(
             ),
             cv.Optional(CONF_CURRENT_RESISTOR): sensor.sensor_schema(
                 unit_of_measurement=UNIT_OHM,
+                icon=ICON_RESTART,
                 accuracy_decimals=0,
                 state_class=STATE_CLASS_MEASUREMENT,
+                entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
             ),
         }
     )
