@@ -199,7 +199,83 @@ class MAX30105Component : public PollingComponent, public i2c::I2CDevice {
   void read_fifo();
 
   void read_overflow_counter();
+  // trigers
+  friend class PowerReadyTrigger;
+  friend class FifoAlmostFullTrigger;
+  friend class DataReadyTrigger;
+  friend class ALCOverflowTrigger;
+  friend class ProximityInterruptTrigger;
+  friend class TemperatureReadyTrigger;
+
+  CallbackManager<void()> on_power_ready_callback_;
+  CallbackManager<void()> on_fifo_almost_full_callback_;
+  CallbackManager<void()> on_data_ready_callback_;
+  CallbackManager<void()> on_alc_overflow_callback_;
+  CallbackManager<void()> on_prox_int_callback_;
+  CallbackManager<void(float)> on_temp_ready_callback_;
+
+  void add_on_power_ready_callback(std::function<void()> callback) {
+    this->on_power_ready_callback_.add(std::move(callback));
+  }
+  void add_on_fifo_almost_full_callback(std::function<void()> callback) {
+    this->on_fifo_almost_full_callback_.add(std::move(callback));
+  }
+  void add_on_data_ready_callback(std::function<void()> callback) {
+    this->on_data_ready_callback_.add(std::move(callback));
+  }
+  void add_on_alc_overflow_callback(std::function<void()> callback) {
+    this->on_alc_overflow_callback_.add(std::move(callback));
+  }
+  void add_on_prox_int_callback(std::function<void()> callback) {
+    this->on_prox_int_callback_.add(std::move(callback));
+  }
+  void add_on_temp_ready_callback(std::function<void(float)> callback) {
+    this->on_temp_ready_callback_.add(std::move(callback));
+  }
 };  // class MAX30105Component
+
+class PowerReadyTrigger : public Trigger<> {
+ public:
+  explicit PowerReadyTrigger(MAX30105Component *parent) {
+    parent->add_on_power_ready_callback(std::bind(&PowerReadyTrigger::trigger, this));
+  }
+};
+
+class FifoAlmostFullTrigger : public Trigger<> {
+ public:
+  explicit FifoAlmostFullTrigger(MAX30105Component *parent) {
+    parent->add_on_fifo_almost_full_callback(std::bind(&FifoAlmostFullTrigger::trigger, this));
+  }
+};
+
+class DataReadyTrigger : public Trigger<> {
+ public:
+  explicit DataReadyTrigger(MAX30105Component *parent) {
+    parent->add_on_data_ready_callback(std::bind(&DataReadyTrigger::trigger, this));
+  }
+};
+
+class ALCOverflowTrigger : public Trigger<> {
+ public:
+  explicit ALCOverflowTrigger(MAX30105Component *parent) {
+    parent->add_on_alc_overflow_callback(std::bind(&ALCOverflowTrigger::trigger, this));
+  }
+};
+
+class ProximityInterruptTrigger : public Trigger<> {
+ public:
+  explicit ProximityInterruptTrigger(MAX30105Component *parent) {
+    parent->add_on_prox_int_callback(std::bind(&ProximityInterruptTrigger::trigger, this));
+  }
+};
+
+class TemperatureReadyTrigger : public Trigger<float> {
+ public:
+  explicit TemperatureReadyTrigger(MAX30105Component *parent) {
+    parent->add_on_temp_ready_callback(std::bind(&TemperatureReadyTrigger::trigger, this, std::placeholders::_1));
+  }
+};
+
 
 template<typename... Ts> class MAX30105ResetAction : public Action<Ts...> {
  public:

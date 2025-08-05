@@ -102,6 +102,15 @@ max30105:
   update_interval: 5s
 
   interrupt_pin: D7 # make sure this pin has a pull-up resistor
+  on_temperature_ready:
+    - logger.log:
+        format: "sensor temperature ready %f"
+        args: ["temperature"]
+  on_fifo_almost_full:
+    - logger.log:
+        format: "sensor fifo full %f"
+        args: []
+    
 
 binary_sensor:
   - platform: max30105

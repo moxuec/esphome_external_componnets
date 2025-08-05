@@ -301,40 +301,47 @@ void MAX30105Component::loop() {
       if (this->power_ready_binary_sensor_ != nullptr) {
         this->power_ready_binary_sensor_->publish_state(true);
       }
+      this->on_power_ready_callback_.call();
     }
     if (status1 & MAX30105_INTERRUPT_PROXIMITY) {
       if (this->target_binary_sensor_ != nullptr) {
         this->target_binary_sensor_->publish_state(true);
       }
+      this->on_prox_int_callback_.call();
     }
     if (status1 & MAX30105_INTERRUPT_ALC_OVF) {
       if (this->alc_overflow_binary_sensor_ != nullptr) {
         this->alc_overflow_binary_sensor_->publish_state(true);
       }
+      this->on_alc_overflow_callback_.call();
     }
     if (status1 & MAX30105_INTERRUPT_DATA_RDY) {
       if (this->data_ready_binary_sensor_ != nullptr) {
         this->data_ready_binary_sensor_->publish_state(true);
       }
+      this->on_data_ready_callback_.call();
     }
     if (status1 & MAX30105_INTERRUPT_FIFO_FULL) {
       if (this->fifo_full_binary_sensor_ != nullptr) {
         this->fifo_full_binary_sensor_->publish_state(true);
       }
       this->read_overflow_counter();
+      this->on_fifo_almost_full_callback_.call();
     }
     if (status2 & MAX30105_INTERRUPT_TEMP_RDY) {
       if (this->temperature_ready_binary_sensor_ != nullptr) {
         this->temperature_ready_binary_sensor_->publish_state(true);
       }
-      if (this->temperature_sensor_ != nullptr) {
-        int32_t temp_int = (int32_t)this->reg(REG_TEMP_INT).get();
-        uint8_t temp_frac = this->reg(REG_TEMP_FRAC).get(); // & 0x0F;  // 只保留低4位
-        if (temp_int > 127) {
-          temp_int -= 256;
-        }
-        this->temperature_sensor_->publish_state((float) temp_int + ((float) temp_frac) * 0.0625);
+      int32_t temp_int = (int32_t)this->reg(REG_TEMP_INT).get();
+      uint8_t temp_frac = this->reg(REG_TEMP_FRAC).get(); // & 0x0F;  // 只保留低4位
+      if (temp_int > 127) {
+        temp_int -= 256;
       }
+      float temperature = (float) temp_int + ((float) temp_frac) * 0.0625;
+      if (this->temperature_sensor_ != nullptr) {
+        this->temperature_sensor_->publish_state(temperature);
+      }
+      this->on_temp_ready_callback_.call(temperature);
     }
     this->interrupt_ = false;
     this->need_clear_ = true;
