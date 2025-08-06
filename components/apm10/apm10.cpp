@@ -63,20 +63,33 @@ void APM10Component::update() {
     ESP_LOGW(TAG, "APM10 CRC error: expected %02X, got %02X", crc, data[5]);
     return;  // CRC error
   }
+  if(this->type_ == APM10_TYPE_3000) {
+    crc = apm10_crc8((uint8_t *)data + 6, 2);
+    if(crc!=data[8]) {
+      ESP_LOGW(TAG, "APM10 CRC error: expected %02X, got %02X", crc, data[8]);
+      return;  // CRC error
+    }
+  }
   crc = apm10_crc8((uint8_t *)data + 9, 2);
   if (crc != data[11]) {
     ESP_LOGW(TAG, "APM10 CRC error: expected %02X, got %02X", crc, data[11]);
     return;  // CRC error
   }
   uint16_t pm1_0 = (((uint16_t)data[0]) << 8) | ((uint16_t)data[1]);  // PM1.0
-  uint16_t pm2_5 = (((uint16_t)data[3]) << 8) | ((uint16_t)data[4]);  // PM2.5
-  uint16_t pm10 = (((uint16_t)data[9]) << 8) | ((uint16_t)data[10]);  // PM10.0
   if (this->pm1_sensor_ != nullptr) {
     this->pm1_sensor_->publish_state(pm1_0);
   }
+  uint16_t pm2_5 = (((uint16_t)data[3]) << 8) | ((uint16_t)data[4]);  // PM2.5
   if (this->pm2_5_sensor_ != nullptr) {
     this->pm2_5_sensor_->publish_state(pm2_5);
   }
+  if(this->type_ == APM10_TYPE_3000) {
+    uint16_t pm4 = (((uint16_t)data[6]) << 8) | ((uint16_t)data[7]);  // PM4.0
+    if(this->pm4_sensor_!= nullptr) {
+      this->pm4_sensor_->publish_state(pm4);
+    }
+  }
+  uint16_t pm10 = (((uint16_t)data[9]) << 8) | ((uint16_t)data[10]);  // PM10.0
   if (this->pm10_sensor_ != nullptr) {
     this->pm10_sensor_->publish_state(pm10);
   }

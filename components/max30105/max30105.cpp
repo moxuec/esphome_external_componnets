@@ -77,6 +77,7 @@ void MAX30105Component::setup() {
     this->interrupt_pin_->setup();
     this->interrupt_pin_->attach_interrupt(MAX30105Component::irq, this, gpio::INTERRUPT_FALLING_EDGE);
   }
+  this->simulate_interrupt(); // 貌似不读一次寄存器的话，后续中断不会发生
 }
 
 void MAX30105Component::update() {

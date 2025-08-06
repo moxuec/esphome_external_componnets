@@ -6,6 +6,7 @@ from esphome.components import sensor, uart
 from esphome.const import (
     CONF_ID,
     CONF_PM_2_5,
+    CONF_PM_4_0,
     UNIT_MICROGRAMS_PER_CUBIC_METER,
     DEVICE_CLASS_PM25,
     STATE_CLASS_MEASUREMENT,
@@ -18,8 +19,6 @@ from esphome.const import (
 
 CODEOWNERS = ["@synodriver"]
 DEPENDENCIES = ["uart"]
-
-CONF_PM_4_0 = "pm_4_0"
 
 apm3001 = cg.esphome_ns.namespace("apm3001")
 APM3001Component = apm3001.class_("APM3001Component", cg.PollingComponent, uart.UARTDevice)
