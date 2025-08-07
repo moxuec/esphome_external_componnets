@@ -28,6 +28,7 @@ void APM3001Component::dump_config() {
   LOG_SENSOR("  ", "PM2.5", this->pm2_5_sensor_);
   LOG_SENSOR("  ", "PM4.0", this->pm4_sensor_);
   LOG_SENSOR("  ", "PM10.0", this->pm10_sensor_);
+  this->check_uart_settings(9600);
 }
 
 void APM3001Component::update() {
@@ -51,6 +52,7 @@ void APM3001Component::update() {
   if(this->pm10_sensor_ != nullptr) {
     this->pm10_sensor_->publish_state((((uint16_t)data[10]) << 8) | (uint16_t)data[11]);
   }
+  this->status_clear_warning();  // Clear warning if everything is fine
 }
 
 void APM3001Component::start_measurement() {
