@@ -17,7 +17,7 @@ AOF1000Component = aof1000.class_("AOF1000Component", cg.PollingComponent, uart.
 CONF_O2 = "O2"
 CONF_VOLUME_FLOW_RATE = "volume_flow_rate"
 ICON_LEAF = "mdi:leaf"
-UNIT_L_PER_MIN = "L/min"
+UNIT_L_PER_MINUTE  = "L/min"
 
 CONFIG_SCHEMA = cv.All(
     cv.Schema(
@@ -30,7 +30,7 @@ CONFIG_SCHEMA = cv.All(
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
             cv.Optional(CONF_VOLUME_FLOW_RATE): sensor.sensor_schema(
-                unit_of_measurement=UNIT_L_PER_MIN,
+                unit_of_measurement=UNIT_L_PER_MINUTE,
                 accuracy_decimals=1,
                 device_class=DEVICE_CLASS_VOLUME_FLOW_RATE,
             ),
