@@ -27,19 +27,28 @@ void AGR12Component::update() {
     // 读取压力传感器数据
     uint8_t data[3];
     this->read(data, 3);
-    uint8_t crc= data[0] ^ data[1];
+    uint8_t crc = data[0] ^ data[1];
     if(crc!=data[2]) {
       ESP_LOGW(TAG, "AGR12 CRC error: expected %02X, got %02X", crc, data[2]);
+      this->status_set_warning();
       return;  // CRC错误
     }
     int32_t pressure = ((int32_t)data[0] << 8) | ((int32_t)data[1]);
+    float frac = 10.0f;
+    if (this->type_==AGR12) {
+      frac = 10.0f;
+    } else {
+      frac = 100.0f;
+    }
+
     if (data[0] & 0x80) {
       // 负压
       pressure = pressure & 0x7FFF;  // 清除符号位
-      this->pressure_sensor_->publish_state((float)(pressure-32768) / 10.0f);
+      this->pressure_sensor_->publish_state((float)(pressure-32768) / frac);
     } else {
-      this->pressure_sensor_->publish_state((float) pressure / 10.0f);
+      this->pressure_sensor_->publish_state((float) pressure / frac);
     }
+    this->status_clear_warning();
   }
 }
 

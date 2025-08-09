@@ -1,1 +1,2 @@
 # https://www.aosong.com/userfiles/files/media/AGR12压力传感器系列说明书（IIC款）A0-20240527.pdf
+# https://www.aosong.com/userfiles/files/media/APR5852%E5%B7%AE%E5%8E%8B%E4%BC%A0%E6%84%9F%E5%99%A8%E8%AF%B4%E6%98%8E%E4%B9%A6-%E4%B8%AD%E6%96%87%E7%89%88%20A1-202409.pdf
