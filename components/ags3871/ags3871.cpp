@@ -45,6 +45,7 @@ void AGS3871Component::update() {
     uint8_t crc = ags3871_crc8(data, 4);
     if (crc != data[4]) {
       ESP_LOGW(TAG, "AGS3871 CRC error: expected %02X, got %02X", crc, data[4]);
+      this->status_set_warning();
       return;  // CRC error
     }
     std::bitset<8> status = data[0];
@@ -62,12 +63,14 @@ void AGS3871Component::update() {
     uint8_t crc = ags3871_crc8(data, 4);
     if (crc != data[4]) {
       ESP_LOGW(TAG, "AGS3871 CRC error: expected %02X, got %02X", crc, data[4]);
+      this->status_set_warning();
       return;  // CRC error
     }
     uint32_t resistor = (((uint32_t)data[0]) << 16) | (((uint32_t)data[1]) << 8) | ((uint32_t)data[2]);  // 解析阻值数据 todo is this right？
     // https://github.com/RobTillaart/Arduino/blob/48a03abc5948770150802e773848eb8266718969/libraries/AGS3871/AGS3871.cpp
     this->resistor_sensor_->publish_state(resistor*10);
   }
+  this->status_clear_warning();
 }
 
 void AGS3871Component::calibrate(uint16_t mode) {
@@ -83,9 +86,11 @@ int AGS3871Component::get_version() {
   uint8_t crc = ags3871_crc8(data, 4);
   if (crc != data[4]) {
     ESP_LOGW(TAG, "AGS3871 CRC error: expected %02X, got %02X", crc, data[4]);
+    this->status_set_warning();
     return -1;  // CRC error
   }
   int version = ((int)data[0] << 24) | ((int)data[1] << 16) | ((int)data[2] << 8) | ((int)data[3]);
+  this->status_clear_warning();
   return version;
 }
 

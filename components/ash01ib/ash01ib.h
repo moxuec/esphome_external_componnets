@@ -28,7 +28,7 @@ class ASH01IBComponent : public PollingComponent, public i2c::I2CDevice {
   void stop_measurement();
   void start_calibration();
   void stop_calibration();
-  
+
  protected:
   sensor::Sensor *humidity_sensor_{nullptr};
   uint16_t sn();
