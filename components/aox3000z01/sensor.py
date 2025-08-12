@@ -4,8 +4,7 @@ from esphome.components import sensor, uart
 from esphome.const import (
     CONF_ID,
     STATE_CLASS_MEASUREMENT,
-    CONF_TEMPERATURE,
-    DEVICE_CLASS_VOLUME_FLOW_RATE, UNIT_PERCENT, UNIT_CELSIUS, ICON_THERMOMETER, DEVICE_CLASS_TEMPERATURE
+    UNIT_PERCENT
 )
 
 CODEOWNERS = ["@synodriver"]
