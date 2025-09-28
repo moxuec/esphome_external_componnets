@@ -17,6 +17,7 @@ static const uint8_t DART_COMMAND_SET_NQA[] = {0xFF, 0x01, 0x78, 0x40, 0x00, 0x0
 
 uint8_t dart_checksum(const uint8_t *command) {
   uint8_t sum = 0;
+  // datasheet 算法：sum bytes[1..7], 然后取反 + 1
   for (uint8_t i = 1; i < DART_REQUEST_LENGTH; i++) {
     sum += command[i];
   }
@@ -26,11 +27,32 @@ uint8_t dart_checksum(const uint8_t *command) {
 
 void DARTWSZComponent::setup() {
   uint8_t response[DART_RESPONSE_LENGTH];
+
   if (this->mode_ == DARTWS_MODE_PASSIVE) {
+    // 切到问答（被动）模式，等待一次响应确认
     if (!this->dart_write_command_(DART_COMMAND_SET_QA, response)) {
-      ESP_LOGW(TAG, "Reading data from DART WS-Z failed!");
+      ESP_LOGW(TAG, "Setting DART WS-Z to QA (passive) mode failed!");
       this->status_set_warning();
       return;
+    } else {
+      ESP_LOGD(TAG, "DART WS-Z set to QA (passive) mode.");
+      this->status_clear_warning();
+    }
+  } else {  // ACTIVE
+    // 切到主动上传模式（不需要等待返包，但是要发送命令并清空串口缓存）
+    if (!this->dart_write_command_(DART_COMMAND_SET_NQA, nullptr)) {
+      ESP_LOGW(TAG, "Setting DART WS-Z to NQA (active) mode failed!");
+      this->status_set_warning();
+      // don't return here — 仍然可以尝试处理来着主动上报的包
+    } else {
+      ESP_LOGD(TAG, "DART WS-Z set to NQA (active) mode.");
+      this->status_clear_warning();
+    }
+    // 给模块一些时间切换并开始上报（短延时）
+    delay(200);
+    // 丢弃 RX buffer 的残留数据，保证后续读取的是新帧
+    while (this->available()) {
+      this->read();
     }
   }
 }
@@ -61,7 +83,8 @@ void DARTWSZComponent::update() {
     const uint16_t ch2oh_mg = uint16_t(response[2]) * 256 + response[3];
     const uint16_t ch20h_ppb = uint16_t(response[6]) * 256 + response[7];
 
-    ESP_LOGD(TAG, "DART WS-Z Received HCHO=%u µg/m³, %u ppb, %X,%X,%X,%X,%X,%X,%X,%X,%X, ", ch2oh_mg, ch20h_ppb,
+    ESP_LOGD(TAG, "DART WS-Z Received HCHO=%u µg/m³, %u ppb, %02X %02X %02X %02X %02X %02X %02X %02X %02X",
+             ch2oh_mg, ch20h_ppb,
              response[0], response[1], response[2], response[3], response[4], response[5], response[6], response[7],
              response[8]);
     if (this->formaldehyde_sensor_ != nullptr) {
@@ -91,7 +114,7 @@ void DARTWSZComponent::loop() {
         return;
       }
 
-      // 校验和检查
+      // 校验和检查：对 data[0..7] 求和（包含 checksum），如果和 != 0 说明校验失败
       uint8_t sum = 0;
       for (int i = 0; i < 8; i++) {
         sum += data[i];
@@ -103,16 +126,36 @@ void DARTWSZComponent::loop() {
         continue;
       }
 
-      // 检查 甲醛ID(0x17) 和 Ppb单位(0x04)
-      if (data[0] == 0x17 && data[1] == 0x04) {
-        // 浓度值位置在第4和第5字节 (数组索引为 data[3] 和 data[4])
+      // 兼容两种常见的主动上报帧格式：
+      // 1) 被动/问答风格（第二字节 0x86）：格式与被动响应相同，只不过是主动发送
+      //    在这里 data[0] == 0x86，此时对应被动响应中的 response[1]，index 映射如下：
+      //    response[2] -> data[1], response[3] -> data[2]
+      //    response[6] -> data[5], response[7] -> data[6]
+      // 2) ID=0x17 + unit=0x04 风格：按照原来实现解析 data[3], data[4]
+      if (data[0] == 0x86) {
+        // 解析与被动响应相同
+        uint16_t ugm3 = (uint16_t(data[1]) << 8) | uint16_t(data[2]);   // response[2,3]
+        uint16_t ppb = (uint16_t(data[5]) << 8) | uint16_t(data[6]);    // response[6,7]
+
+        ESP_LOGD(TAG, "Active frame (86-style) Received HCHO=%u µg/m³, %u ppb", ugm3, ppb);
+        if (this->formaldehyde_sensor_ != nullptr) {
+          this->formaldehyde_sensor_->publish_state(ugm3);
+        }
+        if (this->formaldehyde_ppb_sensor_ != nullptr) {
+          this->formaldehyde_ppb_sensor_->publish_state(ppb);
+        }
+      } else if (data[0] == 0x17 && data[1] == 0x04) {
+        // 原有的 ID/Unit 风格（保留）
         uint32_t val = (uint32_t(data[3]) << 8) | uint32_t(data[4]);
+        ESP_LOGD(TAG, "Active frame (17-style) Received HCHO ppb=%u", val);
         if (this->formaldehyde_ppb_sensor_ != nullptr) {
           this->formaldehyde_ppb_sensor_->publish_state(val);
         }
       } else {
-        // 如果收到其他ID或单位的数据，也记录下来
-        ESP_LOGW(TAG, "Ignoring frame with unknown ID/Unit. ID: 0x%02X, Unit: 0x02X", data[0], data[1]);
+        // 未知格式：打印全部字节，便于调试真实设备上报的内容
+        ESP_LOGW(TAG, "Ignoring frame with unknown ID/Unit. ID: 0x%02X, Unit: 0x%02X (raw: %02X %02X %02X %02X %02X %02X %02X %02X)",
+                 data[0], data[1],
+                 data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
       }
     }
   }
